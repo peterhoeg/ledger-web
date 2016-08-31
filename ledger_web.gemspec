@@ -14,15 +14,18 @@ Gem::Specification.new do |s|
   s.description = %q{Allows arbitrary reporting on your ledger using easy-to-write SQL queries}
 
   s.add_dependency("pg")
+  s.add_dependency("sqlite3")
   s.add_dependency("sequel")
   s.add_dependency("directory_watcher", "~> 1.5.1")
   s.add_dependency("rack", ">= 1.3.6")
   s.add_dependency("sinatra")
   s.add_dependency("sinatra-session")
   s.add_dependency("sinatra-contrib")
-  s.add_dependency("rspec")
   s.add_dependency("database_cleaner")
-  s.add_dependency("docverter")
+
+  s.add_development_dependency("docverter")
+  s.add_development_dependency("rspec")
+  s.add_development_dependency("rubocop")
 
   s.bindir        = 'bin'
   s.files         = `git ls-files`.split("\n")
