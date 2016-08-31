@@ -1,5 +1,4 @@
 module LedgerWeb
-
   class Config
     attr_reader :vars, :hooks
 
@@ -18,9 +17,7 @@ module LedgerWeb
       @vars = {}
       @hooks = {}
 
-      if block_given?
-        yield self
-      end
+      yield self if block_given?
     end
 
     def set(key, value)
@@ -41,12 +38,12 @@ module LedgerWeb
     end
 
     def run_hooks(phase, data)
-      if @hooks.has_key? phase
+      if @hooks.key? phase
         @hooks[phase].each do |hook|
           hook.call(data)
         end
       end
-      return data
+      data
     end
 
     def override_with(config)
@@ -64,17 +61,17 @@ module LedgerWeb
     def load_user_config(user_dir)
       if LedgerWeb::Config.should_load_user_config && File.directory?(user_dir)
         if File.directory? "#{user_dir}/reports"
-          dirs = self.get(:report_directories)
+          dirs = get(:report_directories)
           dirs.unshift "#{user_dir}/reports"
-          self.set :report_directories, dirs
+          set :report_directories, dirs
         end
 
         if File.directory? "#{user_dir}/migrate"
-          self.set :user_migrate_dir, "#{user_dir}/migrate"
+          set :user_migrate_dir, "#{user_dir}/migrate"
         end
 
-        if File.exists? "#{user_dir}/config.rb"
-          self.override_with(LedgerWeb::Config.from_file("#{user_dir}/config.rb"))
+        if File.exist? "#{user_dir}/config.rb"
+          override_with(LedgerWeb::Config.from_file("#{user_dir}/config.rb"))
         end
       end
     end
@@ -87,23 +84,23 @@ module LedgerWeb
 
     def self.instance
       @@instance ||= LedgerWeb::Config.new do |config|
-        config.set :database_url,       "postgres://localhost/ledger"
-        config.set :port,               "9090"
+        config.set :database_url,       'postgres://localhost/ledger'
+        config.set :port,               '9090'
         config.set :ledger_file,        ENV['LEDGER_FILE']
         config.set :report_directories, ["#{File.dirname(__FILE__)}/reports"]
         config.set :additional_view_directories, []
         config.set :session_secret,     'SomethingSecretThisWayPassed'
-        config.set :session_expire,     60*60
+        config.set :session_expire,     60 * 60
         config.set :watch_interval,     5
         config.set :watch_stable_count, 3
-        config.set :ledger_bin_path,    "ledger"
+        config.set :ledger_bin_path,    'ledger'
 
         config.set :ledger_format, "%(quoted(xact.beg_line)),%(quoted(date)),%(quoted(payee)),%(quoted(account)),%(quoted(commodity)),%(quoted(quantity(scrub(display_amount)))),%(quoted(cleared)),%(quoted(virtual)),%(quoted(join(note | xact.note))),%(quoted(cost))\n"
-        config.set :ledger_columns, [ :xtn_id, :xtn_date, :note, :account, :commodity, :amount, :cleared, :virtual, :tags, :cost ]
+        config.set :ledger_columns, [:xtn_id, :xtn_date, :note, :account, :commodity, :amount, :cleared, :virtual, :tags, :cost]
 
         config.set :price_lookup_skip_symbols, ['$']
 
-        func = Proc.new do |symbol, min_date, max_date|
+        func = proc do |symbol, min_date, max_date|
           LedgerWeb::YahooPriceLookup.new(symbol, min_date - 1, max_date).lookup
         end
         config.set :price_function, func

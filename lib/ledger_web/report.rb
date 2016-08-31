@@ -10,11 +10,9 @@ module LedgerWeb
       @text = value
       @align = 'left'
     end
-
   end
 
   class Report
-
     attr_accessor :error, :fields, :rows
 
     @@session = {}
@@ -38,8 +36,8 @@ module LedgerWeb
 
     def self.from_query(query)
       params = {
-        :from => Report.session[:from],
-        :to => Report.session[:to]
+        from: Report.session[:from],
+        to: Report.session[:to]
       }
 
       @@params.each do |key, val|
@@ -47,12 +45,10 @@ module LedgerWeb
       end
 
       ds = LedgerWeb::Database.handle.fetch(query, params)
-      report = self.new
+      report = new
       begin
         row = ds.first
-        if row.nil?
-          raise "No data"
-        end
+        raise 'No data' if row.nil?
         ds.columns.each do |col|
           report.add_field col.to_s
         end
@@ -68,7 +64,7 @@ module LedgerWeb
         report.error = e
       end
 
-      return report
+      report
     end
 
     def initialize
@@ -82,7 +78,7 @@ module LedgerWeb
 
     def add_row(row)
       if row.length != @fields.length
-        raise "row length not equal to fields length"
+        raise 'row length not equal to fields length'
       end
       @rows << row
     end
@@ -97,7 +93,7 @@ module LedgerWeb
       new_report = self.class.new
 
       bucket_column_index = 0
-      self.fields.each_with_index do |f, i|
+      fields.each_with_index do |f, i|
         if f == column
           bucket_column_index = i
           break
@@ -109,30 +105,26 @@ module LedgerWeb
       buckets = {}
       new_rows = {}
 
-      self.each do |row|
-        key = row[0, bucket_column_index].map { |r| r.value }
+      each do |row|
+        key = row[0, bucket_column_index].map(&:value)
         bucket_name = row[bucket_column_index].value
         bucket_value = row[bucket_column_index + 1].value
 
-        if not buckets.has_key? bucket_name
-          buckets[bucket_name] = bucket_name
-        end
+        buckets[bucket_name] = bucket_name unless buckets.key? bucket_name
 
         new_rows[key] ||= {}
         new_rows[key][bucket_name] = bucket_value
       end
 
       bucket_keys = buckets.keys.sort
-      if sort_order && sort_order == 'desc'
-        bucket_keys = bucket_keys.reverse
-      end
+      bucket_keys = bucket_keys.reverse if sort_order && sort_order == 'desc'
 
       bucket_keys.each do |bucket|
         new_report.add_field(buckets[bucket])
       end
 
       new_rows.each do |key, value|
-        row = key.each_with_index.map { |k,i| Cell.new(new_report.fields[i], k) }
+        row = key.each_with_index.map { |k, i| Cell.new(new_report.fields[i], k) }
         bucket_keys.each do |b|
           row << Cell.new(b.to_s, value[b])
         end
@@ -140,10 +132,9 @@ module LedgerWeb
         new_report.add_row(row)
       end
 
-      return new_report
+      new_report
     end
   end
-
 end
 
 def find_all_reports
@@ -152,17 +143,15 @@ def find_all_reports
   reports = {}
 
   directories.each do |dir|
-    if File.directory? dir
-      Dir.glob(File.join(dir, "*.erb")) do |report|
-        basename = File.basename(report).gsub('.erb', '')
-        reports[basename] = 1
-      end
+    next unless File.directory? dir
+    Dir.glob(File.join(dir, '*.erb')) do |report|
+      basename = File.basename(report).gsub('.erb', '')
+      reports[basename] = 1
     end
   end
 
   reports.keys.sort.map do |report|
-    name = report.split(/_/).map { |w| w.capitalize }.join(" ")
+    name = report.split(/_/).map(&:capitalize).join(' ')
     [report, name]
   end
-
 end

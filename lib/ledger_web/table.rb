@@ -1,6 +1,5 @@
 module LedgerWeb
   class Table
-
     attr_reader :attributes
 
     def initialize(report)
@@ -10,7 +9,7 @@ module LedgerWeb
       yield self if block_given?
     end
 
-    def decorate decorator
+    def decorate(decorator)
       @decorators << decorator
     end
 
@@ -18,7 +17,7 @@ module LedgerWeb
       @decorators.clear
     end
 
-    def link href
+    def link(href)
       if_clause = href.delete(:if)
       href[href.keys.first] = LedgerWeb::Decorators::LinkDecorator.new(href.values.first)
       href[:if] = if_clause
@@ -44,17 +43,16 @@ module LedgerWeb
             header_aligns[cell_index] = cell.align
           end
 
-          style = cell.style.map { |key, val| "#{key}:#{val}"}.join(";")
-          %Q{<td style="#{style}"><span class="pull-#{cell.align}">#{cell.text}</span></td>}
-        end.join("")
+          style = cell.style.map { |key, val| "#{key}:#{val}" }.join(';')
+          %(<td style="#{style}"><span class="pull-#{cell.align}">#{cell.text}</span></td>)
+        end.join('')
       end
 
-      body = "<tbody>" + body_rows.map { |r| "<tr>#{r}</tr>" }.join("") + "</tbody>"
-      header = "<thead><tr>" + @report.fields.each_with_index.map { |f,i| "<th><span class=\"pull-#{header_aligns[i] || 'left'}\">#{f}</span></th>" }.join("") + "</tr></thead>"
+      body = '<tbody>' + body_rows.map { |r| "<tr>#{r}</tr>" }.join('') + '</tbody>'
+      header = '<thead><tr>' + @report.fields.each_with_index.map { |f, i| "<th><span class=\"pull-#{header_aligns[i] || 'left'}\">#{f}</span></th>" }.join('') + '</tr></thead>'
 
-      attrs = attributes.map { |key,val| "#{key}=\"#{val}\"" }.join(" ")
+      attrs = attributes.map { |key, val| "#{key}=\"#{val}\"" }.join(' ')
       "<table #{attrs}>#{header}#{body}</table>"
     end
   end
-
 end

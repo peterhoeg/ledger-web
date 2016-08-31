@@ -2,11 +2,11 @@ require 'cgi'
 
 module LedgerWeb::Decorators
   class NumberDecorator
-    def initialize(precision=2)
+    def initialize(precision = 2)
       @precision = precision
     end
 
-    def decorate(cell, row)
+    def decorate(cell, _row)
       if cell.value.is_a?(Numeric)
         cell.align = 'right'
         cell.text = sprintf("%0.#{@precision}f", cell.value)
@@ -22,7 +22,7 @@ module LedgerWeb::Decorators
 
     def decorate(cell, row)
       url = String.new(@href_pattern)
-      row.each_with_index do |c,i|
+      row.each_with_index do |c, i|
         url.gsub!(":#{i}", CGI.escape(c.value.to_s))
       end
       url.gsub!(':title', CGI.escape(cell.title.to_s))
@@ -39,7 +39,7 @@ module LedgerWeb::Decorators
       @icon = icon
     end
 
-    def decorate(cell, row)
+    def decorate(cell, _row)
       cell.text = "<i class=\"icon-#{@icon}\"></i>"
       cell
     end
@@ -50,12 +50,9 @@ module LedgerWeb::Decorators
       @color = color
     end
 
-    def decorate(cell, row)
+    def decorate(cell, _row)
       cell.style['background-color'] = @color
       cell
     end
   end
-  
 end
-
-  

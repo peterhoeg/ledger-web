@@ -32,6 +32,5 @@ HERE
     from
         _a cross join _y
 HERE
-
   end
 end

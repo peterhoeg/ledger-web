@@ -1,4 +1,4 @@
-$:.unshift(File.join(File.dirname(__FILE__), "..", "lib"))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 
 require 'rspec'
 require 'ledger_web/config'
@@ -8,15 +8,13 @@ require 'ledger_web/helpers'
 require 'database_cleaner'
 
 RSpec.configure do |config|
-
   config.before(:suite) do
-
     system 'createdb ledger-test'
     LedgerWeb::Config.should_load_user_config = false
     LedgerWeb::Config.instance.set :database_url, 'postgres://localhost/ledger-test'
     LedgerWeb::Database.connect
     LedgerWeb::Database.run_migrations
-    
+
     DatabaseCleaner.strategy = :truncation
     DatabaseCleaner.clean_with(:truncation)
   end
@@ -33,7 +31,6 @@ RSpec.configure do |config|
     LedgerWeb::Database.close
     system 'dropdb ledger-test'
   end
-
 end
 
 def set_config(key, val)
@@ -41,15 +38,13 @@ def set_config(key, val)
 end
 
 def fixture(name)
-  File.join(File.dirname(__FILE__), "fixtures", name + ".dat")
+  File.join(File.dirname(__FILE__), 'fixtures', name + '.dat')
 end
 
 def convert_bd_to_string(objs)
   objs.map do |obj|
-    obj.each do |k,v|
-      if v.is_a? BigDecimal
-        obj[k] = v.truncate(2).to_s('F')
-      end
+    obj.each do |k, v|
+      obj[k] = v.truncate(2).to_s('F') if v.is_a? BigDecimal
     end
     obj
   end

@@ -15,17 +15,17 @@ module LedgerWeb
     helpers Sinatra::Capture
     helpers LedgerWeb::Helpers
 
-    def find_template(views, name, engine, &block)
+    def find_template(_views, name, engine, &block)
       _views = LedgerWeb::Config.instance.get(:report_directories) + LedgerWeb::Config.instance.get(:additional_view_directories) + [File.join(File.dirname(__FILE__), 'views')]
       Array(_views).each { |v| super(v, name, engine, &block) }
     end
 
     before do
-      if not session?
+      unless session?
         session_start!
         today = Date.today
-        session[:from] = Date.new(today.year - 1, today.month, today.day).strftime("%Y/%m/%d")
-        session[:to] = today.strftime("%Y/%m/%d")
+        session[:from] = Date.new(today.year - 1, today.month, today.day).strftime('%Y/%m/%d')
+        session[:to] = today.strftime('%Y/%m/%d')
       end
       Report.session = session
       Report.params = params
@@ -34,7 +34,6 @@ module LedgerWeb
     end
 
     post '/update-date-range' do
-
       if params[:reset]
         today = Date.today
         session[:from] = Date.new(today.year - 1, today.month, today.day).strftime('%Y/%m/%d')
@@ -74,7 +73,7 @@ module LedgerWeb
     get '/' do
       index_report = LedgerWeb::Config.instance.get :index_report
       if index_report
-        redirect "/reports/#{index_report.to_s}"
+        redirect "/reports/#{index_report}"
       else
         redirect '/help'
       end
@@ -84,5 +83,4 @@ module LedgerWeb
       erb :help
     end
   end
-
 end

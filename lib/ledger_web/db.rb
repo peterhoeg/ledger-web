@@ -5,10 +5,9 @@ require 'tempfile'
 
 module LedgerWeb
   class Database
-
     def self.connect
       @@db = Sequel.connect(LedgerWeb::Config.instance.get(:database_url))
-      self.run_migrations()
+      run_migrations
     end
 
     def self.close
@@ -20,11 +19,11 @@ module LedgerWeb
     end
 
     def self.run_migrations
-      Sequel::Migrator.apply(@@db, File.join(File.dirname(__FILE__), "db/migrate"))
+      Sequel::Migrator.apply(@@db, File.join(File.dirname(__FILE__), 'db/migrate'))
 
       user_migrations = LedgerWeb::Config.instance.get :user_migrate_dir
-      if not user_migrations.nil?
-        Sequel::Migrator.run(@@db, user_migrations, :table => "user_schema_changes")
+      unless user_migrations.nil?
+        Sequel::Migrator.run(@@db, user_migrations, table: 'user_schema_changes')
       end
     end
 
@@ -33,28 +32,27 @@ module LedgerWeb
       ledger_file = LedgerWeb::Config.instance.get :ledger_file
       ledger_format = LedgerWeb::Config.instance.get :ledger_format
 
-      puts "Dumping ledger to file..."
+      puts 'Dumping ledger to file...'
       file = Tempfile.new('ledger')
       system "#{ledger_bin_path} -f #{ledger_file} --format='#{ledger_format}' reg > #{file.path}"
       replaced_file = Tempfile.new('ledger')
       replaced_file.write(file.read.gsub('\"', '""'))
       replaced_file.flush
 
-      puts "Dump finished"
-      return replaced_file
+      puts 'Dump finished'
+      replaced_file
     end
-      
+
     def self.load_database(file)
       counter = 0
       @@db.transaction do
-    
         LedgerWeb::Config.instance.run_hooks(:before_load, @@db)
 
-        puts "Clearing ledger table...."
-        @@db["DELETE FROM ledger"].delete
-        puts "Done clearing ledger table"
-    
-        puts "Loading into database...."
+        puts 'Clearing ledger table....'
+        @@db['DELETE FROM ledger'].delete
+        puts 'Done clearing ledger table'
+
+        puts 'Loading into database....'
 
         ledger_columns = LedgerWeb::Config.instance.get :ledger_columns
 
@@ -63,22 +61,22 @@ module LedgerWeb
           row = Hash[*ledger_columns.zip(row).flatten]
 
           xtn_date = Date.strptime(row[:xtn_date], '%Y/%m/%d')
-    
+
           row[:xtn_month] = xtn_date.strftime('%Y/%m/01')
           row[:xtn_year]  = xtn_date.strftime('%Y/01/01')
           row[:cost] = parse_cost(row[:cost])
-    
+
           row = LedgerWeb::Config.instance.run_hooks(:before_insert_row, row)
           @@db[:ledger].insert(row)
           LedgerWeb::Config.instance.run_hooks(:after_insert_row, row)
         end
-    
-        puts "Running after_load hooks"
+
+        puts 'Running after_load hooks'
         LedgerWeb::Config.instance.run_hooks(:after_load, @@db)
       end
-      puts "Analyzing ledger table"
+      puts 'Analyzing ledger table'
       @@db.fetch('VACUUM ANALYZE ledger').all
-      puts "Done!"
+      puts 'Done!'
       counter
     end
 
@@ -91,7 +89,7 @@ module LedgerWeb
       end
       cost.gsub(/[^\d\.-]/, '')
     end
-    
+
     def self.load_prices
       query = <<HERE
         select
@@ -113,28 +111,25 @@ module LedgerWeb
             commodity
         ) x
 HERE
-    
-      puts "    Deleting prices"
-      @@db["DELETE FROM prices"].delete
-    
+
+      puts '    Deleting prices'
+      @@db['DELETE FROM prices'].delete
+
       rows = @@db.fetch(query)
       proc = LedgerWeb::Config.instance.get :price_function
       skip = LedgerWeb::Config.instance.get :price_lookup_skip_symbols
-    
-      puts "Loading prices"
+
+      puts 'Loading prices'
       rows.each do |row|
-        if skip.include?(row[:commodity])
-          next
-        end
-    
+        next if skip.include?(row[:commodity])
+
         prices = proc.call(row[:commodity], row[:min_date], row[:max_date])
         prices.each do |price|
-          @@db[:prices].insert(:commodity => row[:commodity], :price_date => price[0], :price => price[1])
+          @@db[:prices].insert(commodity: row[:commodity], price_date: price[0], price: price[1])
         end
       end
-      @@db.fetch("analyze prices").all
-      puts "Done loading prices"
+      @@db.fetch('analyze prices').all
+      puts 'Done loading prices'
     end
   end
 end
-
